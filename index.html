@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Situação Covid-19 Brasil</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-bottom: 30px;
+        }
+
+        th, td {
+            border: 1px solid #ccc;
+            padding: 10px;
+            text-align: center;
+        }
+
+        th {
+            background-color: #eee;
+        }
+
+        .high-deaths {
+            background-color: crimson;
+            color: white;
+        }
+
+        .info-section p {
+            margin: 5px 0;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>Relatório Covid-19 nos Estados do Brasil</h1>
+
+    <table id="covidTable">
+        <thead>
+            <tr>
+                <th>Estado</th>
+                <th>UF</th>
+                <th>Casos Suspeitos</th>
+                <th>Óbitos</th>
+            </tr>
+        </thead>
+        <tbody id="tableBody">
+            <!-- Dados serão inseridos aqui -->
+        </tbody>
+    </table>
+
+    <div class="info-section">
+        <p id="avgCases">Média de casos por estado:</p>
+        <p id="avgSuspects">Média de suspeitos por estado:</p>
+        <p id="avgDeaths">Média de óbitos por estado:</p>
+        <p id="highestRatio">Maior índice de casos por morte:</p>
+        <p id="lowestRatio">Menor índice de casos por morte:</p>
+    </div>
+
+    <script>
+        async function carregarDadosCovid() {
+            try {
+                const res = await fetch('https://covid19-brazil-api.now.sh/api/report/v1');
+                const json = await res.json();
+                const estados = json.data;
+
+                const corpoTabela = document.getElementById("tableBody");
+                const mediaCasos = document.getElementById("avgCases");
+                const mediaSuspeitos = document.getElementById("avgSuspects");
+                const mediaObitos = document.getElementById("avgDeaths");
+                const maiorRazao = document.getElementById("highestRatio");
+                const menorRazao = document.getElementById("lowestRatio");
+
+                let somaCasos = 0;
+                let somaSuspeitos = 0;
+                let somaObitos = 0;
+                let maiorIndice = -Infinity;
+                let menorIndice = Infinity;
+                let estadoMaiorIndice = '';
+                let estadoMenorIndice = '';
+
+                estados.forEach(estado => {
+                    const linha = corpoTabela.insertRow();
+
+                    linha.insertCell().textContent = estado.state;
+                    linha.insertCell().textContent = estado.uf;
+                    linha.insertCell().textContent = estado.suspects;
+                    linha.insertCell().textContent = estado.deaths;
+
+                    somaCasos += estado.cases;
+                    somaSuspeitos += estado.suspects;
+                    somaObitos += estado.deaths;
+
+                    if (estado.deaths > 0) {
+                        const indice = estado.cases / estado.deaths;
+
+                        if (indice > maiorIndice) {
+                            maiorIndice = indice;
+                            estadoMaiorIndice = estado.state;
+                        }
+
+                        if (indice < menorIndice) {
+                            menorIndice = indice;
+                            estadoMenorIndice = estado.state;
+                        }
+                    }
+                });
+
+                const totalEstados = estados.length;
+                mediaCasos.textContent += ` ${(somaCasos / totalEstados).toFixed(2)}`;
+                mediaSuspeitos.textContent += ` ${(somaSuspeitos / totalEstados).toFixed(2)}`;
+                mediaObitos.textContent += ` ${(somaObitos / totalEstados).toFixed(2)}`;
+                maiorRazao.textContent += ` ${estadoMaiorIndice}`;
+                menorRazao.textContent += ` ${estadoMenorIndice}`;
+
+                const mediaObitosEstado = somaObitos / totalEstados;
+                Array.from(corpoTabela.rows).forEach(row => {
+                    const obitos = parseInt(row.cells[3].textContent);
+                    if (obitos > mediaObitosEstado) {
+                        row.classList.add("high-deaths");
+                    }
+                });
+
+            } catch (error) {
+                console.error("Erro ao carregar os dados da API:", error);
+            }
+        }
+
+        carregarDadosCovid();
+    </script>
+
+</body>
+
+</html>
