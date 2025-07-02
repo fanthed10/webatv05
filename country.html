@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Situação Covid por País</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+        }
+
+        th, td {
+            border: 1px solid #ccc;
+            padding: 10px;
+            text-align: center;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        .red-country {
+            background-color: rgb(157, 0, 0);
+            color: white;
+        }
+
+        p {
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>Relatório de Mortes por Covid-19 (Países)</h1>
+
+    <table id="tabelaCovid">
+        <thead>
+            <tr>
+                <th>País</th>
+                <th>Falecidos</th>
+            </tr>
+        </thead>
+        <tbody id="corpoTabela">
+            <!-- Dados inseridos via JavaScript -->
+        </tbody>
+    </table>
+
+    <p id="mediaMortes">Média de mortes por país:</p>
+
+    <script>
+        async function carregarDadosCovidPaises() {
+            const corpoTabela = document.getElementById("corpoTabela");
+            const mediaMortes = document.getElementById("mediaMortes");
+
+            try {
+                const resposta = await fetch('https://covid19-brazil-api.now.sh/api/report/v1/countries');
+                const json = await resposta.json();
+
+                const paises = json.data;
+                let totalObitos = 0;
+
+                paises.forEach(pais => {
+                    const linha = corpoTabela.insertRow();
+
+                    const celulaPais = linha.insertCell(0);
+                    const celulaMortes = linha.insertCell(1);
+
+                    celulaPais.textContent = pais.country;
+                    celulaMortes.textContent = pais.deaths;
+
+                    totalObitos += pais.deaths;
+                });
+
+                const media = totalObitos / paises.length;
+                mediaMortes.textContent += ` ${media.toFixed(2)}`;
+
+                Array.from(corpoTabela.rows).forEach(linha => {
+                    const mortes = parseInt(linha.cells[1].textContent);
+                    if (mortes > media) {
+                        linha.classList.add("red-country");
+                    }
+                });
+
+            } catch (erro) {
+                console.error("Erro ao buscar dados da API:", erro);
+                mediaMortes.textContent = "Erro ao carregar os dados.";
+            }
+        }
+
+        carregarDadosCovidPaises();
+    </script>
+
+</body>
+
+</html>
